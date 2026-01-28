@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AddFriendErrorDialog</class>
+ <widget class="QDialog" name="AddFriendErrorDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>323</width>
+    <height>249</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>ErrTip</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../../res.qrc">
+    <normaloff>:/res/wx.png</normaloff>:/res/wx.png</iconset>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QWidget" name="widget" native="true">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QLabel" name="label_addfriend_err_tip">
+        <property name="font">
+         <font>
+          <pointsize>14</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>该用户不存在！</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="widget_2" native="true">
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QPushButton" name="btn_addfriend_close">
+        <property name="minimumSize">
+         <size>
+          <width>70</width>
+          <height>60</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>70</width>
+          <height>60</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>关闭</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../../res.qrc"/>
+ </resources>
+ <connections/>
+</ui>

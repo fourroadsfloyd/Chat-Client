@@ -1,0 +1,184 @@
+QDialog#LoginDialog, RegisterDialog{
+    background-color:rgb(255,255,255)
+}
+
+QDialog#ChatDialog{
+   border-radius: 5px
+}
+
+#label_user, #label_pwd{
+    color:black;
+}
+
+#label_errortip[state='normal']{
+   color: green;
+}
+
+#label_errortip[state='err']{
+   color: red;
+}
+
+#visible_pwd[state='unvisible']{
+   border-image: url(:/res/unvisible.png);
+}
+
+#visible_pwd[state='unvisible_hover']{
+   border-image: url(:/res/unvisible_hover.png);
+}
+
+#visible_pwd[state='visible']{
+   border-image: url(:/res/visible.png);
+}
+
+#visible_pwd[state='visible_hover']{
+   border-image: url(:/res/visible_hover.png);
+}
+
+#visible_pwd_again[state='unvisible']{
+   border-image: url(:/res/unvisible.png);
+}
+
+#visible_pwd_again[state='unvisible_hover']{
+   border-image: url(:/res/unvisible_hover.png);
+}
+
+#visible_pwd_again[state='visible']{
+   border-image: url(:/res/visible.png);
+}
+
+#visible_pwd_again[state='visible_hover']{
+   border-image: url(:/res/visible_hover.png);
+}
+
+#label_forget[state='normal'],#label_forget[state='selected']{
+    color:black;
+}
+
+#label_forget[state='hover'], #label_forget[state='selected_hover']{
+    color: rgb(42, 112, 241);
+}
+
+#label_err[state='normal']{
+   color: green;
+}
+
+#label_err[state='err']{
+   color: red;
+}
+
+#label_errtip_login[state='normal']{
+   color: green;
+}
+
+#label_errtip_login[state='err']{
+   color: red;
+}
+
+
+ClickedBtn {
+    background: transparent;
+    border: none;
+}
+
+#btn_search[state='normal']{
+   border-image: url(:/res/add_friend_normal.png);
+}
+
+#btn_search[state='hover']{
+   border-image: url(:/res/add_friend_hover.png);
+}
+
+#btn_emoji[state='normal']{
+   image: url(:/res/smile.png);
+}
+
+#btn_emoji[state='hover']{
+   image: url(:/res/smile_press.png);
+}
+
+#btn_file[state='normal']{
+   image: url(:/res/filedir.png);
+}
+
+#btn_file[state='hover']{
+   image: url(:/res/filedir_hover.png);
+}
+
+#third_stackWidget{
+   background: rgba(240, 240, 240, 1);
+}
+
+#toolbar_widget {
+    border-top: 1px solid palette(mid);
+}
+
+#msg_widget{
+   background: rgba(240, 240, 240, 1);
+}
+
+#send_widget{
+   border: none;
+   background: rgba(240, 240, 240, 1);
+}
+
+#edit_input {
+    border: none;          /* 去掉外框 */
+    outline: none;         /* 去掉焦点虚线框 */
+    background: rgba(240, 240, 240, 1);
+}
+
+#chat_icon[type="nav"]{
+   border: none;
+   background: transparent;
+
+   width: 24px;
+   height: 24px;
+   min-width: 24px;
+   min-height: 24px;
+
+   image: url(:/res/chat_icon.png);
+}
+
+#chat_icon[type="nav"]:checked{
+   image: url(:/res/chat_icon_press.png);
+}
+
+#contact_icon[type="nav"]{
+   border: none;
+   background: transparent;
+
+   width: 24px;
+   height: 24px;
+   min-width: 24px;
+   min-height: 24px;
+
+   image: url(:/res/contact_list.png);
+}
+
+#contact_icon[type="nav"]:checked{
+   image: url(:/res/contact_list_press.png);
+}
+
+QScrollBar:vertical {
+    background: transparent; /* 将轨道背景设置为透明 */
+    width: 8px; /* 滚动条宽度，根据需要调整 */
+    margin: 0px; /* 移除滚动条与滑块之间的间距 */
+}
+
+QScrollBar::handle:vertical {
+    background: rgb(173,170,169); /* 滑块颜色 */
+    min-height: 10px; /* 滑块最小高度，根据需要调整 */
+    border-radius: 4px; /* 滑块边缘圆角，调整以形成椭圆形状 */
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px; /* 移除上下按钮 */
+    border: none; /* 移除边框 */
+    background: transparent; /* 背景透明 */
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none; /* 页面滚动部分背景透明 */
+}
+
+
