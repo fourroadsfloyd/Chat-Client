@@ -181,4 +181,3 @@ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
     background: none; /* 页面滚动部分背景透明 */
 }
 
-

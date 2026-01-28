@@ -15,6 +15,7 @@
 #include <QLabel>
 #include <QMouseEvent>
 #include <QIcon>
+#include <QScrollBar>
 
 ChatWidget::ChatWidget(QWidget *parent)
     : QWidget(parent)
@@ -32,26 +33,103 @@ ChatWidget::ChatWidget(QWidget *parent)
 {
     ui->setupUi(this);
 
+    scrollBarStyle_enter = QString("QScrollBar:vertical { background: rgba(0, 0, 0, 0.05); width: 8px; border-radius: 4px;}"
+                                   "QScrollBar::handle:vertical { background: rgba(0, 0, 0, 0.3); min-height: 20px; border-radius: 4px; }");
+
+    scrollBarStyle_leave = QString("QScrollBar:vertical { background: rgba(0, 0, 0, 0.05); width: 8px; border-radius: 4px; }"
+                                   "QScrollBar::handle:vertical { background: transparent; }");
+
     this->UI_Init();
+
+    this->setupChatList();
 
     this->setupContactList();
 
     this->setupApplyList();
 
-    // 初始化消息列表
-    ui->msg_listView->setModel(_msg_model);
-    ui->msg_listView->setItemDelegate(_msg_delegate);
-    ui->msg_listView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    this->setupMsgList();
 
     // 添加测试数据
-    //testAddMessages();
-
-    ui->third_stackWidget->setCurrentWidget(ui->chat_widget);
+    testAddMessages();
 }
 
 ChatWidget::~ChatWidget()
 {
     delete ui;
+}
+
+bool ChatWidget::eventFilter(QObject *watched, QEvent *event)
+{
+    // 检查事件是否是鼠标悬浮进入或离开
+    if (watched == ui->chat_list_view->viewport())
+    {
+        if (event->type() == QEvent::Enter)
+        {
+            // 鼠标悬浮，显示滚动条
+            ui->chat_list_view->verticalScrollBar()->setStyleSheet(scrollBarStyle_enter);
+        }
+        else if (event->type() == QEvent::Leave)
+        {
+            // 鼠标离开，隐藏滚动条
+            ui->chat_list_view->verticalScrollBar()->setStyleSheet(scrollBarStyle_leave);
+        }
+    }
+
+    // 检查事件是否是鼠标悬浮进入或离开
+    if (watched == ui->contact_list_view->viewport())
+    {
+        if (event->type() == QEvent::Enter)
+        {
+            // 鼠标悬浮，显示滚动条
+            ui->contact_list_view->verticalScrollBar()->setStyleSheet(scrollBarStyle_enter);
+        }
+        else if (event->type() == QEvent::Leave)
+        {
+            // 鼠标离开，隐藏滚动条
+            ui->contact_list_view->verticalScrollBar()->setStyleSheet(scrollBarStyle_leave);
+        }
+    }
+
+    // msg_listView 滚动条显示/隐藏控制
+    if (watched == ui->msg_listView->viewport())
+    {
+        if (event->type() == QEvent::Enter)
+        {
+            // 鼠标进入 viewport，显示滚动条
+            ui->msg_listView->verticalScrollBar()->setStyleSheet(scrollBarStyle_enter);
+        }
+        else if (event->type() == QEvent::Leave)
+        {
+            // 鼠标离开 viewport，隐藏滚动条
+            ui->msg_listView->verticalScrollBar()->setStyleSheet(scrollBarStyle_leave);
+        }
+    }
+
+    if (watched == ui->apply_list_view->viewport() && event->type() == QEvent::MouseButtonPress)
+    {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
+        QPoint pos = mouseEvent->pos();
+        QModelIndex index = ui->apply_list_view->indexAt(pos);
+        if (index.isValid())
+        {
+            // 创建 QStyleOptionViewItem 并初始化
+            QStyleOptionViewItem option;
+            option.initFrom(ui->apply_list_view);  // 初始化字体、调色板等
+            option.rect = ui->apply_list_view->visualRect(index);  // 设置项的实际矩形
+
+            // 获取按钮区域
+            QRect buttonRect = _applyfriend_delegate->buttonRect(option, index);
+            if (buttonRect.contains(pos))
+            {
+                int toUid = _applyfriend_model->data(index, AddFriendModel::UidRole).toInt();
+                //qDebug() << "auth in eventfilter, A id = " << toUid;
+                emit this->sig_agree_apply(toUid);
+                _applyfriend_model->updateStatus(index, 1); // 更新模型状态为 1（已处理）
+            }
+        }
+    }
+
+    return QWidget::eventFilter(watched, event);    //继续分发事件
 }
 
 void ChatWidget::UI_Init()
@@ -94,13 +172,9 @@ void ChatWidget::UI_Init()
 
     ui->chat_icon->setChecked(true);
 
-    ui->chat_list_view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
-    ui->chat_list_view->viewport()->installEventFilter(this);
-
-    ui->contact_list_view->viewport()->installEventFilter(this);
-
     ui->second_stackedWidget->setCurrentWidget(ui->first_widget);
+
+    ui->third_stackWidget->setCurrentWidget(ui->chat_widget);
 
     // 连接 edit_search 的文本改变信号，当输入时自动弹出并更新搜索结果
     connect(ui->edit_search, &QLineEdit::textChanged, this, [this](const QString &text) {
@@ -138,26 +212,25 @@ void ChatWidget::UI_Init()
             this, &ChatWidget::slot_messageSent);
 
     // 连接 TcpMgr 接收聊天消息信号
-    connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_text_chat_msg, this, [this](std::shared_ptr<MsgModel::MsgItem> msg, int fromUid) {
+    connect(TcpMgr::GetInstance().get(), &TcpMgr::sig_text_chat_msg, this, [](std::shared_ptr<MsgModel::MsgItem> msg, int fromUid) {
         // 将接收到的消息添加到 ChatSessionMgr
         ChatSessionMgr::GetInstance()->addMessage(fromUid, msg);
     });
 
-    // 初始化各个列表
-    setupChatList();
-    setupContactList();
-    setupApplyList();
+    // 初始化好友申请红点
+    updateApplyFriendBadge();
+}
 
-    //点击联系人列表，进入到联系人的详情页
-    connect(ui->contact_list_view, &QListView::clicked, this, [this](const QModelIndex& index){
-        ui->contact_icon_2->setIcon(QIcon(_contact_model->data(index, ContactModel::AvatarRole).toString()));
-        ui->contact_icon_2->setIconSize(QSize(ui->contact_icon_2->width(), ui->contact_icon_2->height()));
-        ui->contact_name->setText(_contact_model->data(index, ContactModel::NameRole).toString());
-        ui->contact_uid->setText(_contact_model->data(index, ContactModel::UidRole).toString());
-        // TODO: 如果有 contact_email 控件，设置 email
-        ui->contact_email->setText(_contact_model->data(index, ContactModel::EmailRole).toString());
-        ui->third_stackWidget->setCurrentWidget(ui->contact_widget);
-    });
+void ChatWidget::setupChatList()
+{
+    ui->chat_list_view->setModel(_chat_model);
+    ui->chat_list_view->setItemDelegate(_chat_delegate);
+
+    ui->chat_list_view->setSelectionMode(QAbstractItemView::SingleSelection);
+    ui->chat_list_view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    ui->chat_list_view->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+
+    ui->chat_list_view->viewport()->installEventFilter(this);
 
     connect(ui->chat_list_view, &QListView::clicked, this, [this](const QModelIndex& index){
         int friendUid = _chat_model->data(index, ChatModel::ChatRole::UidRole).toInt();
@@ -171,23 +244,7 @@ void ChatWidget::UI_Init()
 
         ui->third_stackWidget->setCurrentWidget(ui->chat_widget);
     });
-
-    // 初始化好友申请红点
-    updateApplyFriendBadge();
 }
-
-void ChatWidget::setupChatList()
-{
-    ui->chat_list_view->setModel(_chat_model);
-    ui->chat_list_view->setItemDelegate(_chat_delegate);
-
-    ui->chat_list_view->setSelectionMode(QAbstractItemView::SingleSelection);
-    ui->chat_list_view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    ui->chat_list_view->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-
-    ui->chat_list_view->viewport()->installEventFilter(this);
-}
-
 
 void ChatWidget::setupContactList()
 {
@@ -195,11 +252,23 @@ void ChatWidget::setupContactList()
     ui->contact_list_view->setItemDelegate(_contact_delegate);
 
     ui->contact_list_view->setSelectionMode(QAbstractItemView::SingleSelection);
-    ui->contact_list_view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    ui->contact_list_view->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    ui->contact_list_view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
     //将用户的联系人列表打到contact_model中，以便委托绘制
     _contact_model->setContacts(UserMgr::GetInstance()->GetContactList());
+
+    ui->contact_list_view->viewport()->installEventFilter(this);
+
+    //点击联系人列表，进入到联系人的详情页
+    connect(ui->contact_list_view, &QListView::clicked, this, [this](const QModelIndex& index){
+        ui->contact_icon_2->setIcon(QIcon(_contact_model->data(index, ContactModel::AvatarRole).toString()));
+        ui->contact_icon_2->setIconSize(QSize(ui->contact_icon_2->width(), ui->contact_icon_2->height()));
+        ui->contact_name->setText(_contact_model->data(index, ContactModel::NameRole).toString());
+        ui->contact_uid->setText(_contact_model->data(index, ContactModel::UidRole).toString());
+        // TODO: 如果有 contact_email 控件，设置 email
+        ui->contact_email->setText(_contact_model->data(index, ContactModel::EmailRole).toString());
+        ui->third_stackWidget->setCurrentWidget(ui->contact_widget);
+    });
 }
 
 void ChatWidget::setupApplyList()
@@ -208,12 +277,26 @@ void ChatWidget::setupApplyList()
     ui->apply_list_view->setItemDelegate(_applyfriend_delegate);
 
     ui->apply_list_view->setSelectionMode(QAbstractItemView::SingleSelection);
-    ui->apply_list_view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    ui->apply_list_view->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    ui->apply_list_view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
     ui->apply_list_view->viewport()->installEventFilter(this);  // 添加：安装事件过滤器
 
     _applyfriend_model->setApplyFriends(UserMgr::GetInstance()->GetApplyList());
+}
+
+void ChatWidget::setupMsgList()
+{
+    // 初始化消息列表
+    ui->msg_listView->setModel(_msg_model);
+    ui->msg_listView->setItemDelegate(_msg_delegate);
+
+    ui->msg_listView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);    //直接占位，仅在事件过滤器中设置轨道和滑轮的颜色，以及滑轮出现的时机
+
+    ui->msg_listView->setResizeMode(QListView::Adjust);     // 允许 item 自适应大小
+    ui->msg_listView->setUniformItemSizes(false);           // 允许不同 item 有不同尺寸
+
+    // 安装 viewport 事件监听器，用于显示/隐藏滚动条
+    ui->msg_listView->viewport()->installEventFilter(this);
 }
 
 // 更新好友申请红点
@@ -266,79 +349,6 @@ void ChatWidget::updateApplyFriendBadge()
             m_badgeLabel->hide();
         }
     }
-}
-
-bool ChatWidget::eventFilter(QObject *watched, QEvent *event)
-{
-    // 检查事件是否是鼠标悬浮进入或离开
-    if (watched == ui->chat_list_view->viewport())
-    {
-        if (event->type() == QEvent::Enter)
-        {
-            // 鼠标悬浮，显示滚动条
-            ui->chat_list_view->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        }
-        else if (event->type() == QEvent::Leave)
-        {
-            // 鼠标离开，隐藏滚动条
-            ui->chat_list_view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        }
-    }
-
-    // 检查事件是否是鼠标悬浮进入或离开
-    if (watched == ui->contact_list_view->viewport())
-    {
-        if (event->type() == QEvent::Enter)
-        {
-            // 鼠标悬浮，显示滚动条
-            ui->contact_list_view->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        }
-        else if (event->type() == QEvent::Leave)
-        {
-            // 鼠标离开，隐藏滚动条
-            ui->contact_list_view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        }
-    }
-
-    // 检查事件是否是鼠标悬浮进入或离开
-    if (watched == ui->chat_list_view->viewport())
-    {
-        if (event->type() == QEvent::Enter) {
-            // 鼠标悬浮，显示滚动条
-            ui->chat_list_view->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        }
-        else if (event->type() == QEvent::Leave)
-        {
-            // 鼠标离开，隐藏滚动条
-            ui->chat_list_view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-        }
-    }
-
-    if (watched == ui->apply_list_view->viewport() && event->type() == QEvent::MouseButtonPress)
-    {
-        QMouseEvent *mouseEvent = static_cast<QMouseEvent*>(event);
-        QPoint pos = mouseEvent->pos();
-        QModelIndex index = ui->apply_list_view->indexAt(pos);
-        if (index.isValid())
-        {
-            // 创建 QStyleOptionViewItem 并初始化
-            QStyleOptionViewItem option;
-            option.initFrom(ui->apply_list_view);  // 初始化字体、调色板等
-            option.rect = ui->apply_list_view->visualRect(index);  // 设置项的实际矩形
-
-            // 获取按钮区域
-            QRect buttonRect = _applyfriend_delegate->buttonRect(option, index);
-            if (buttonRect.contains(pos))
-            {
-                int toUid = _applyfriend_model->data(index, AddFriendModel::UidRole).toInt();
-                //qDebug() << "auth in eventfilter, A id = " << toUid;
-                emit this->sig_agree_apply(toUid);
-                _applyfriend_model->updateStatus(index, 1); // 更新模型状态为 1（已处理）
-            }
-        }
-    }
-
-    return QWidget::eventFilter(watched, event);    //继续分发事件
 }
 
 //最左侧列表的聊天按钮
@@ -451,41 +461,41 @@ void ChatWidget::on_btn_sendMsg_clicked()
 }
 
 // 测试函数：添加假消息数据
-// void ChatWidget::testAddMessages()
-// {
-//     // 使用 global.h 中的假数据
-//     for (int i = 0; i < 5; ++i) {
-//         // 添加对方的消息
-//         auto otherMsg = std::make_shared<MsgModel::MsgItem>();
-//         otherMsg->type = MsgModel::MsgItem::TextMessage;
-//         otherMsg->content = strs[i % strs.size()];
-//         otherMsg->sender = names[i % names.size()];
-//         otherMsg->avatar = heads[i % heads.size()];
-//         otherMsg->senderUid = 1000 + i;
-//         otherMsg->time = times[i % times.size()];
-//         otherMsg->isSelf = false;
-//         _msg_model->addMessage(otherMsg);
+void ChatWidget::testAddMessages()
+{
+    // 使用 global.h 中的假数据
+    for (int i = 0; i < 5; ++i) {
+        // 添加对方的消息
+        auto otherMsg = std::make_shared<MsgModel::MsgItem>();
+        otherMsg->type = MsgModel::MsgItem::TextMessage;
+        otherMsg->content = strs[i % strs.size()];
+        otherMsg->sender = names[i % names.size()];
+        otherMsg->avatar = heads[i % heads.size()];
+        otherMsg->senderUid = 1000 + i;
+        otherMsg->time = times[i % times.size()];
+        otherMsg->isSelf = false;
+        _msg_model->addMessage(otherMsg);
 
-//         // 添加自己的消息（测试长文本换行）
-//         auto selfMsg = std::make_shared<MsgModel::MsgItem>();
-//         selfMsg->type = MsgModel::MsgItem::TextMessage;
-//         // 添加一条很长的消息来测试自动换行
-//         if (i == 2) {
-//             selfMsg->content = "这是一条非常长的消息，用来测试文本自动换行功能。当文本长度超过消息宽度的一半时，应该自动换行显示。这样可以确保所有内容都能正确显示，而不会被截断。";
-//         } else {
-//             selfMsg->content = "收到！这是一条回复消息 " + QString::number(i + 1);
-//         }
-//         selfMsg->sender = UserMgr::GetInstance()->GetName();
-//         selfMsg->avatar = UserMgr::GetInstance()->GetAvatarPath();
-//         selfMsg->senderUid = UserMgr::GetInstance()->GetUid();
-//         selfMsg->time = times[(i + 1) % times.size()];
-//         selfMsg->isSelf = true;
-//         _msg_model->addMessage(selfMsg);
-//     }
+        // 添加自己的消息（测试长文本换行）
+        auto selfMsg = std::make_shared<MsgModel::MsgItem>();
+        selfMsg->type = MsgModel::MsgItem::TextMessage;
+        // 添加一条很长的消息来测试自动换行
+        if (i == 2) {
+            selfMsg->content = "这是一条非常长的消息，用来测试文本自动换行功能。当文本长度超过消息宽度的一半时，应该自动换行显示。这样可以确保所有内容都能正确显示，而不会被截断。";
+        } else {
+            selfMsg->content = "收到！这是一条回复消息 " + QString::number(i + 1);
+        }
+        selfMsg->sender = UserMgr::GetInstance()->GetName();
+        selfMsg->avatar = UserMgr::GetInstance()->GetAvatarPath();
+        selfMsg->senderUid = UserMgr::GetInstance()->GetUid();
+        selfMsg->time = times[(i + 1) % times.size()];
+        selfMsg->isSelf = true;
+        _msg_model->addMessage(selfMsg);
+    }
 
-//     // 滚动到底部
-//     ui->msg_listView->scrollToBottom();
-// }
+    // 滚动到底部
+    ui->msg_listView->scrollToBottom();
+}
 
 void ChatWidget::on_btn_send_clicked()
 {

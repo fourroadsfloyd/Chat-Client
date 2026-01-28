@@ -23,9 +23,9 @@ private:
     QFont m_nameFont;                     // 预创建的名字字体
     mutable QHash<QString, QIcon> m_iconCache;  // 头像图标缓存
 
-    int m_avatarSize = 40;                // 头像尺寸
-    int m_spacing = 12;                   // 间距
-    int m_padding = 10;                   // 边距
+    static constexpr int m_avatarSize = 40;                // 头像尺寸
+    static constexpr int m_spacing = 12;                   // 间距
+    static constexpr int m_padding = 10;                   // 边距
 };
 
 #endif // CONTACTITEMDELEGATE_H

@@ -3,12 +3,11 @@
 
 #include <QStyledItemDelegate>
 #include <QFont>
-#include <QFontMetrics>
+#include <QFontMetricsF>
 #include <QHash>
 #include <QIcon>
 
-class MsgItemDelegate : public QStyledItemDelegate
-{
+class MsgItemDelegate : public QStyledItemDelegate {
     Q_OBJECT
 public:
     explicit MsgItemDelegate(QObject *parent = nullptr);
@@ -36,9 +35,9 @@ protected:
     QFont m_senderFont;
 
     // FontMetrics
-    QFontMetrics m_contentFontMetrics;
-    QFontMetrics m_timeFontMetrics;
-    QFontMetrics m_senderFontMetrics;
+    QFontMetricsF m_contentFontMetrics;
+    QFontMetricsF m_timeFontMetrics;
+    QFontMetricsF m_senderFontMetrics;
 
     // 头像缓存
     mutable QHash<QString, QIcon> m_iconCache;
@@ -49,6 +48,7 @@ protected:
     static constexpr int BUBBLE_RADIUS = 8;
     static constexpr int SPACING = 5;
     static constexpr int AVATAR_SIZE = 40;
+    static constexpr int SCROLLBAR_WIDTH = 12;  // 预留滚动条宽度
 };
 
 #endif // MSGITEMDELEGATE_H

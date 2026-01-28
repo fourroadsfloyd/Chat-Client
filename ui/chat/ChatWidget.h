@@ -43,9 +43,13 @@ public:
 
     void setupApplyList();
 
+    void setupMsgList();
+
     // 更新好友申请红点
     void updateApplyFriendBadge();
 
+    // 测试函数：添加假消息数据
+    void testAddMessages();
 
 private:
     Ui::ChatWidget *ui;
@@ -70,6 +74,9 @@ private:
 
     QLabel* m_badgeLabel = nullptr;  // 红点提示标签
 
+    QString scrollBarStyle_enter;
+    QString scrollBarStyle_leave;
+
 private slots:
     //最左侧页面切换
     void on_chat_icon_clicked();
@@ -84,9 +91,6 @@ private slots:
     void slot_agree_apply(int toUid);
 
     void on_btn_sendMsg_clicked();  //联系人详情界面的发送信息按钮，用来跳转到聊天界面
-
-    // 测试函数：添加假消息数据
-    //void testAddMessages();
 
     void on_btn_send_clicked();
 

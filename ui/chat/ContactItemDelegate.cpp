@@ -58,19 +58,23 @@ void ContactItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &o
 
     // 绘制头像（使用缓存）
     QIcon avatarIcon;
-    if (!avatarPath.isEmpty()) {
+    if (!avatarPath.isEmpty())
+    {
         // 从缓存获取
         avatarIcon = m_iconCache.value(avatarPath);
-        if (avatarIcon.isNull()) {
+        if (avatarIcon.isNull())
+        {
             // 缓存未命中，创建并缓存
             avatarIcon = QIcon(avatarPath);
-            if (!avatarIcon.isNull()) {
+            if (!avatarIcon.isNull())
+            {
                 m_iconCache[avatarPath] = avatarIcon;
             }
         }
     }
 
-    if (avatarIcon.isNull()) {
+    if (avatarIcon.isNull())
+    {
         avatarIcon = m_defaultAvatarIcon;
     }
     avatarIcon.paint(painter, avatarRect);
