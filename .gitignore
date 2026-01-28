@@ -1,0 +1,52 @@
+# Qt Creator 用户配置
+*.pro.user*
+*.pro.autosave
+
+# Qt 构建产物
+build*/
+*-build-*/
+*-Debug/
+*-Release/
+*-Profile/
+*-RelWithDebInfo/
+*-MinSizeRel/
+
+# CMake
+CMakeLists.txt.user*
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Qt 元对象 & 资源
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+
+# 目标文件 / 可执行
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+*.pdb
+
+# 调试/临时
+*.autosave
+*.tmp
+*~
+.DS_Store
+Thumbs.db
+
+# VS Code / CLion / idea
+.vscode/
+.idea/
+*.iml
+
+# clangd
+.cache/
+compile_commands.json
